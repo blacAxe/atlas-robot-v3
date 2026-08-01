@@ -26,7 +26,6 @@ from run_manager import RunManager
 from serial_reader import SerialReader, available_ports
 from telemetry_parser import TelemetryParser
 from udp_reader import UdpReader
-from transport_cloud import CloudTransport
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
@@ -136,16 +135,6 @@ def on_udp_status(status: dict[str, Any]) -> None:
     latest_udp_status.update(status)
     schedule_broadcast({"message_type": "connection_status", "data": connection_status()})
 
-def on_cloud_status(status: dict[str, Any]) -> None:
-    latest_cloud_status.update(status)
-
-    schedule_broadcast(
-        {
-            "message_type": "connection_status",
-            "data": connection_status(),
-        }
-    )
-
 def on_transport_line(line: str) -> None:
     parsed = parser.parse(line)
 
@@ -183,10 +172,6 @@ udp_reader = UdpReader(
     on_status=on_udp_status,
 )
 
-cloud_transport = CloudTransport(
-    on_line=on_transport_line,
-    on_status=on_cloud_status,
-)
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     global main_loop
@@ -260,9 +245,6 @@ async def api_connect(request: ConnectRequest):
 
             serial_reader.disconnect()
             udp_reader.disconnect()
-            cloud_transport.disconnect()      # optional cleanup
-
-            # cloud_transport.connect(request.cloud_url)
 
             latest_cloud_status["server"] = request.cloud_url
 
@@ -299,7 +281,16 @@ async def api_disconnect():
 
     serial_reader.disconnect()
     udp_reader.disconnect()
-    cloud_transport.disconnect()
+
+    latest_cloud_status["connected"] = False
+    latest_cloud_status["robot"] = None
+
+    schedule_broadcast(
+        {
+            "message_type": "connection_status",
+            "data": connection_status(),
+        }
+    )
 
     return {
         "ok": True,
