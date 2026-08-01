@@ -640,7 +640,9 @@ function connectWebSocket() {
 
     if (message.message_type === "connection_status") {
 
-        console.log("CONNECTION STATUS", message);
+        console.log(message.data);
+        console.log(message.data.cloud);
+        console.log(message.data.active_transport);
 
         updateConnection(message.data);
 
