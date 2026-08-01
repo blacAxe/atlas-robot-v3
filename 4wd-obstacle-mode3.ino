@@ -1,6 +1,6 @@
 #include <Servo.h>
 #include <WiFiS3.h>
-#include <WebSocketsClient.h>
+#include <NuSock.h>
 #include "arduino_secrets.h"
 
 IPAddress laptopIP(192, 168, 0, 180);
@@ -15,7 +15,8 @@ const unsigned int ATLAS_UDP_LOCAL_PORT = 4211;
 const unsigned long WIFI_RETRY_INTERVAL_MS = 5000;
 
 WiFiUDP atlasUdp;
-WebSocketsClient atlasSocket;
+WiFiSSLClient sslClient;
+NuSockClient atlasSocket;
 
 bool wifiTelemetryReady = false;
 unsigned long lastWiFiRetryMs = 0;
@@ -37,6 +38,8 @@ void setControlMode(AtlasControlMode newMode);
 void STOP();
 
 void executeManualCommand(const String &command);
+
+void onNuSockEvent(NuClientEvent event, String message);
 
 const unsigned long MANUAL_COMMAND_TIMEOUT_MS = 500;
 unsigned long lastManualCommandMs = 0;
@@ -88,7 +91,7 @@ private:
         packet += line;
         packet += "\"}";
 
-        atlasSocket.sendTXT(packet);
+        atlasSocket.send(packet.c_str());
     }
 
     lineLength = 0;
@@ -140,11 +143,16 @@ void startWiFiTelemetry() {
     return;
   }
 
-  atlasSocket.beginSSL(CLOUD_HOST, CLOUD_PORT, CLOUD_PATH);
+  atlasSocket.begin(
+      &sslClient,
+      CLOUD_HOST,
+      CLOUD_PORT,
+      CLOUD_PATH
+  );
 
-  atlasSocket.onEvent(onWebSocketEvent);
+  atlasSocket.onEvent(onCloudEvent);
 
-  atlasSocket.setReconnectInterval(5000);
+  atlasSocket.connect();
 
   AtlasOut.println(F("Connecting to Atlas Cloud..."));
 
@@ -170,11 +178,16 @@ void maintainWiFiTelemetry() {
     if (!wifiTelemetryReady &&
         WiFi.localIP().toString() != "0.0.0.0") {
 
-      atlasSocket.beginSSL(CLOUD_HOST, CLOUD_PORT, CLOUD_PATH);
+      atlasSocket.begin(
+          &sslClient,
+          CLOUD_HOST,
+          CLOUD_PORT,
+          CLOUD_PATH
+      );
 
-      atlasSocket.onEvent(onWebSocketEvent);
+      atlasSocket.onEvent(onCloudEvent);
 
-      atlasSocket.setReconnectInterval(5000);
+      atlasSocket.connect();
 
       wifiTelemetryReady = true;
 
@@ -196,60 +209,64 @@ void maintainWiFiTelemetry() {
   WiFi.begin(SECRET_SSID, SECRET_PASS);
 }
 
-void onWebSocketEvent(WStype_t type, uint8_t *payload, size_t length)
+void onCloudEvent(
+    NuClient *client,
+    NuClientEvent event,
+    const uint8_t *payload,
+    size_t len)
 {
-    switch (type)
+    switch (event)
     {
-        case WStype_CONNECTED:
-        {
+        case CLIENT_EVENT_CONNECTED:
+
             websocketConnected = true;
 
-            AtlasOut.println(F("Cloud connected"));
+            AtlasOut.println("Cloud connected");
 
-           atlasSocket.sendTXT(
-                "{\"type\":\"hello\",\"robot\":\"atlas-v3\",\"firmware\":\"v3\",\"transport\":\"cloud\"}"
-           );
+            atlasSocket.send(
+                "{\"type\":\"hello\","
+                "\"robot\":\"atlas-v3\","
+                "\"firmware\":\"v3\","
+                "\"transport\":\"cloud\"}"
+            );
 
             break;
-        }
 
-        case WStype_DISCONNECTED:
-        {
+        case CLIENT_EVENT_DISCONNECTED:
+
             websocketConnected = false;
-            AtlasOut.println(F("Cloud disconnected"));
+
+            AtlasOut.println("Cloud disconnected");
+
             break;
-        }
 
-        case WStype_TEXT:
+        case CLIENT_EVENT_MESSAGE_TEXT:
         {
-            String message = String((char*)payload);
+            String message;
 
-            AtlasOut.println(F("WEBSOCKET MESSAGE RECEIVED"));
+            for (size_t i = 0; i < len; i++)
+            {
+                message += (char)payload[i];
+            }
 
-            AtlasOut.print(F("RAW: "));
+            AtlasOut.println("WEBSOCKET MESSAGE RECEIVED");
             AtlasOut.println(message);
 
             int pos = message.indexOf("\"command\":\"");
 
             if (pos < 0)
-            {
-                AtlasOut.println(F("No command field"));
-                break;
-            }
+                return;
 
             pos += 11;
 
             int end = message.indexOf("\"", pos);
 
             if (end < 0)
-            {
-                AtlasOut.println(F("Invalid JSON"));
-                break;
-            }
+                return;
 
             String command = message.substring(pos, end);
 
-            AtlasOut.print(F("Parsed command: "));
+            AtlasOut.print("Parsed command: ");
             AtlasOut.println(command);
 
             if (command == "AUTO")
@@ -661,6 +678,7 @@ int calculateDriveSpeed(float distance) {
 void setup() {
   AtlasOut.begin(115200);
   delay(1200);
+  AtlasOut.println("===== NEW BUILD =====");
   startWiFiTelemetry();
 
   pinMode(Trig, OUTPUT);
@@ -705,7 +723,10 @@ void setup() {
 
 void loop() {
   maintainWiFiTelemetry();
-  atlasSocket.loop();
+  if (wifiTelemetryReady)
+  {
+      atlasSocket.loop();
+  }
   // checkForWiFiCommand();
   maintainManualSafety();
 

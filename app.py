@@ -434,6 +434,17 @@ async def robot_websocket(websocket: WebSocket):
 
     robot_info["connected"] = True
 
+    latest_cloud_status["connected"] = True
+    latest_cloud_status["server"] = "Render"
+    latest_cloud_status["robot"] = robot_info.get("robot")
+
+    schedule_broadcast(
+        {
+            "message_type": "connection_status",
+            "data": connection_status(),
+        }
+    )
+
     print("[ROBOT] Connected")
 
     try:
@@ -447,15 +458,22 @@ async def robot_websocket(websocket: WebSocket):
             if packet_type == "hello":
 
                 robot_info["robot"] = packet.get("robot")
-
                 robot_info["firmware"] = packet.get("firmware")
-
                 robot_info["transport"] = packet.get("transport")
+
+                latest_cloud_status["robot"] = robot_info["robot"]
 
                 schedule_broadcast(
                     {
                         "message_type": "robot_status",
                         "data": robot_info,
+                    }
+                )
+
+                schedule_broadcast(
+                    {
+                        "message_type": "connection_status",
+                        "data": connection_status(),
                     }
                 )
 
@@ -483,11 +501,21 @@ async def robot_websocket(websocket: WebSocket):
 
         robot_info["connected"] = False
 
+        latest_cloud_status["connected"] = False
+        latest_cloud_status["robot"] = None
+
         robot_socket = None
 
         schedule_broadcast(
             {
                 "message_type": "robot_status",
                 "data": robot_info,
+            }
+        )
+
+        schedule_broadcast(
+            {
+                "message_type": "connection_status",
+                "data": connection_status(),
             }
         )

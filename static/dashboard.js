@@ -405,7 +405,7 @@ function updateConnection(connection) {
     else if (connected && transport === "cloud") {
 
         badge.textContent =
-            `Atlas Cloud`;
+            `Atlas Cloud ✓`;
 
     }
     else {
@@ -415,17 +415,14 @@ function updateConnection(connection) {
 
     }
 
-    badge.classList.toggle(
-        "connected",
-        connected
-    );
+    badge.classList.toggle("connected", connected);
 
     $("connectButton").disabled = connected;
-
     $("disconnectButton").disabled = !connected;
-
     $("transportSelect").disabled = connected;
 
+    $("mobileConnectionLabel").textContent =
+        connected ? "Connected" : "Disconnected";
 }
 
 function updateRun(run) {
