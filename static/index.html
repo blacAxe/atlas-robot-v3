@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <title>Atlas Mobile Dashboard</title>
+  <meta name="theme-color" content="#07111d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Atlas">
+  <link rel="stylesheet" href="/static/dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>Atlas Dashboard</h1>
+      <p>Stage 2.4 · Desktop and mobile Wi-Fi control</p>
+    </div>
+    <div class="connection-badge" id="connectionBadge">Disconnected</div>
+  </header>
+
+  <div class="mobile-status-strip">
+    <span id="mobileModeLabel">AUTO</span>
+    <span id="mobileConnectionLabel">Disconnected</span>
+    <button id="mobileStopButton" type="button">STOP</button>
+  </div>
+
+  <main>
+    <section class="panel controls">
+      <div class="field small">
+        <label for="transportSelect">Transport</label>
+        <select id="transportSelect">
+          <option value="serial">USB Serial</option>
+          <option value="udp">Wi-Fi UDP</option>
+        </select>
+      </div>
+      <div class="field" id="serialPortField">
+        <label for="portSelect">Serial port</label>
+        <select id="portSelect"></select>
+      </div>
+      <div class="field small" id="baudField">
+        <label for="baudInput">Baud</label>
+        <input id="baudInput" type="number" value="115200">
+      </div>
+      <div class="field small hidden" id="udpPortField">
+        <label for="udpPortInput">UDP port</label>
+        <input id="udpPortInput" type="number" value="4210">
+      </div>
+      <button id="refreshPortsButton">Refresh ports</button>
+      <button id="connectButton" class="primary">Connect</button>
+      <button id="disconnectButton">Disconnect</button>
+      <button id="startRunButton" class="success">Start run</button>
+      <button id="stopRunButton" class="danger">Stop run</button>
+      <div class="run-summary">
+        <span>Run</span>
+        <strong id="runId">Not recording</strong>
+        <span id="runDuration">00:00:00</span>
+      </div>
+    </section>
+
+    <section class="grid behavior-grid secondary-dashboard-section">
+      <article class="panel hero-card">
+        <span class="eyebrow">Current state</span>
+        <strong id="currentState">UNKNOWN</strong>
+      </article>
+      <article class="panel hero-card">
+        <span class="eyebrow">Last decision</span>
+        <strong id="lastDecision">NONE</strong>
+      </article>
+      <article class="panel hero-card">
+        <span class="eyebrow">Reason</span>
+        <strong id="lastReason">NONE</strong>
+      </article>
+      <article class="panel hero-card">
+        <span class="eyebrow">Recovery</span>
+        <strong id="recoveryStatus">NORMAL</strong>
+      </article>
+    </section>
+
+    <section class="panel wifi-control-panel">
+      <div class="control-panel-heading">
+        <div>
+          <span class="eyebrow">Stage 2.2 complete Wi-Fi control</span>
+          <h2>Atlas remote drive</h2>
+          <p>Hold a movement button to drive. Releasing it sends STOP. Controls require Wi-Fi UDP.</p>
+        </div>
+        <div class="mode-actions">
+          <button id="autoModeButton" class="mode-button active">AUTO</button>
+          <button id="manualModeButton" class="mode-button">MANUAL</button>
+          <span id="controlModeBadge" class="mode-badge">AUTO</span>
+        </div>
+      </div>
+
+      <div class="remote-control-layout">
+        <div class="drive-pad" aria-label="Atlas movement controls">
+          <button class="drive-button" data-command="FL">↖<small>Forward left</small></button>
+          <button class="drive-button" data-command="F">↑<small>Forward</small></button>
+          <button class="drive-button" data-command="FR">↗<small>Forward right</small></button>
+
+          <button class="drive-button" data-command="L">↶<small>Turn left</small></button>
+          <button class="drive-button stop-button" data-command="S">■<small>Stop</small></button>
+          <button class="drive-button" data-command="R">↷<small>Turn right</small></button>
+
+          <button class="drive-button" data-command="BL">↙<small>Reverse left</small></button>
+          <button class="drive-button" data-command="B">↓<small>Reverse</small></button>
+          <button class="drive-button" data-command="BR">↘<small>Reverse right</small></button>
+        </div>
+
+        <div class="safety-column">
+          <button id="remoteStopButton" class="emergency-stop">EMERGENCY STOP</button>
+          <button id="remoteResumeButton" class="resume-button">CLEAR E-STOP</button>
+          <button id="remotePingButton">Ping Atlas</button>
+          <p class="safety-note">
+            E-STOP remains latched until cleared. Manual movement stops automatically if commands
+            stop arriving for 500 ms.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid content-grid secondary-dashboard-section">
+      <article class="panel">
+        <div class="panel-heading">
+          <h2>Sensors</h2>
+          <span id="latestMessageAge">No messages</span>
+        </div>
+
+        <div class="distance-card">
+          <span>Ultrasonic</span>
+          <strong id="distanceValue">—</strong>
+          <small id="distanceRange">Min — · Max — · No echo 0</small>
+        </div>
+
+        <div class="robot-map">
+          <div class="sensor sensor-front-left" data-sensor="front_left">
+            <span>Front left</span><strong>CLEAR</strong><small>0 activations</small>
+          </div>
+          <div class="sensor sensor-front-right" data-sensor="front_right">
+            <span>Front right</span><strong>CLEAR</strong><small>0 activations</small>
+          </div>
+          <div class="sensor sensor-left-wing" data-sensor="left_wing">
+            <span>Left wing</span><strong>CLEAR</strong><small>0 activations</small>
+          </div>
+          <div class="robot-body">ATLAS</div>
+          <div class="sensor sensor-right-wing" data-sensor="right_wing">
+            <span>Right wing</span><strong>CLEAR</strong><small>0 activations</small>
+          </div>
+          <div class="sensor sensor-rear" data-sensor="rear">
+            <span>Rear</span><strong>CLEAR</strong><small>0 activations</small>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-heading">
+          <h2>Run counters</h2>
+          <span>Parsed from Arduino output</span>
+        </div>
+        <div class="counter-grid" id="counterGrid"></div>
+      </article>
+    </section>
+
+    <section class="panel chart-panel secondary-dashboard-section">
+      <div class="panel-heading">
+        <h2>Ultrasonic distance</h2>
+        <span>Latest 600 valid samples</span>
+      </div>
+      <canvas id="distanceChart"></canvas>
+    </section>
+
+    <section class="panel timeline-panel secondary-dashboard-section">
+      <div class="panel-heading">
+        <h2>Live event timeline</h2>
+        <div class="timeline-controls">
+          <select id="timelineFilter">
+            <option value="all">All</option>
+            <option value="sensors">Sensors</option>
+            <option value="motion">Motion</option>
+            <option value="decision">Decisions</option>
+            <option value="turn">Turns</option>
+            <option value="scan">Scans</option>
+            <option value="heading">Heading</option>
+            <option value="recovery">Recovery</option>
+            <option value="obstacle">Obstacles</option>
+            <option value="raw">Raw/unparsed</option>
+          </select>
+          <button id="clearTimelineButton">Clear view</button>
+        </div>
+      </div>
+      <div id="timeline" class="timeline"></div>
+    </section>
+
+    <section class="panel status-panel">
+      <h2>Status</h2>
+      <pre id="statusMessage">Ready. Choose USB Serial or Wi-Fi UDP, then connect.</pre>
+    </section>
+  </main>
+
+  <script src="/static/dashboard.js"></script>
+</body>
+</html>
