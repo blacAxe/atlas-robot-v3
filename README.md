@@ -635,24 +635,6 @@ and the broader open-source robotics community.
 
 ---
 
-# License
-
-This project is released under the MIT License.
-
----
-
-# Connect
-
-If you enjoyed this project or found it useful, feel free to:
-
-⭐ Star the repository
-
-🍴 Fork the project
-
-💡 Open an issue
-
-🚀 Suggest improvements
-
 ---
 
 <p align="center">
