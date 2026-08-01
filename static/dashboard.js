@@ -639,8 +639,12 @@ function connectWebSocket() {
     }
 
     if (message.message_type === "connection_status") {
-      updateConnection(message.data);
-      return;
+
+        console.log("CONNECTION STATUS", message);
+
+        updateConnection(message.data);
+
+        return;
     }
 
     if (message.message_type === "run_status") {

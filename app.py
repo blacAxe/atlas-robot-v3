@@ -279,6 +279,13 @@ async def api_connect(request: ConnectRequest):
             detail=str(exc),
         ) from exc
 
+    schedule_broadcast(
+        {
+            "message_type": "connection_status",
+            "data": connection_status(),
+        }
+    )
+
     return {
 
         "ok": True,
