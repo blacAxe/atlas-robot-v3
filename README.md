@@ -1,690 +1,677 @@
-## 🎥 Atlas Driving Demo
+# Atlas Robot v3
 
-Atlas autonomously detects obstacles, scans its surroundings, selects a safe path, and continues navigating in real time.
+<p align="center">
 
-![Atlas Demo](docs/atlas_demo3.gif)
+<a href="docs/atlas_driving1.mp4">
+    <img src="docs/atlas_demo3.gif" width="900"/>
+</a>
 
-**Full HD video:** [▶ Atlas Driving Demo](docs/atlas_driving1.mp4)
+</p>
+
+<p align="center">
+
+![License](https://img.shields.io/github/license/blacAxe/atlas-robot-v3)
+![Stars](https://img.shields.io/github/stars/blacAxe/atlas-robot-v3)
+![Forks](https://img.shields.io/github/forks/blacAxe/atlas-robot-v3)
+![Last Commit](https://img.shields.io/github/last-commit/blacAxe/atlas-robot-v3)
+
+</p>
+
+<p align="center">
+
+![Python](https://img.shields.io/badge/Python-3.12-blue)
+![Arduino](https://img.shields.io/badge/Arduino-Uno_R4_WiFi-00979D)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688)
+![Render](https://img.shields.io/badge/Cloud-Render-46E3B7)
+![WebSockets](https://img.shields.io/badge/WebSockets-WSS-blueviolet)
+![Version](https://img.shields.io/badge/Version-v3-blue)
+![Status](https://img.shields.io/badge/Status-Active-success)
+
+</p>
+
+<p align="center">
+
+**Autonomous Robotics • Embedded Systems • Cloud Robotics • Real-Time Telemetry**
+
+</p>
+
+<p align="center">
+
+🎥 <b>Full Driving Demo:</b>
+<a href="docs/atlas_driving1.mp4">Watch Atlas Navigate Obstacles</a>
+
+</p>
 
 ---
 
-# Atlas Robot v1
+## Overview
 
-A physical robotics engineering workspace focused on autonomous obstacle avoidance, embedded control, sensor fusion, telemetry, debugging, and incremental robot intelligence.
+Atlas Robot is a cloud-connected autonomous robotics platform built to explore embedded software, real-time robotics, networking, and intelligent decision-making.
 
-Atlas Robot v1 combines a four-wheel Arduino robot, a multi-sensor obstacle-avoidance controller, and a live serial dashboard that records how the robot senses, decides, moves, turns, and recovers during each run.
+Rather than creating isolated demonstrations, Atlas evolves through incremental engineering milestones. Each version expands the same physical robot with new hardware, software, and infrastructure while keeping the system observable, testable, and modular.
 
-This repository is not meant to represent a finished commercial robot.  
-It is a hands-on engineering platform built to understand how embedded hardware, real-time sensing, control logic, telemetry, and higher-level robotics software work together.
+The current platform combines:
+
+- Autonomous obstacle avoidance
+- Remote driving over the Internet
+- Secure cloud communication
+- Live telemetry streaming
+- Mobile and desktop dashboard control
+- Structured run recording
+- Embedded safety systems
+
+Atlas serves as the physical robotics platform for future ROS 2, micro-ROS, MCCA, and AI integration.
 
 ---
 
-## Projects Inside This Workspace
+# Highlights
 
-### Atlas 4WD Robot
+✅ Autonomous obstacle avoidance
 
-Physical four-wheel robot featuring:
+✅ Manual and autonomous driving modes
 
-- Freenove-compatible Arduino Uno R4 WiFi controller
-- Sensor Shield V5
-- L298N dual H-bridge motor driver
-- Four TT geared DC motors
-- Four-wheel skid-steer movement
-- HC-SR04 ultrasonic distance sensor
-- SG90 pan-and-tilt sensor mount
+✅ Secure cloud communication using WebSockets (WSS)
+
+✅ Mobile-friendly dashboard
+
+✅ Live robot telemetry
+
+✅ Real-time sensor visualization
+
+✅ Remote emergency stop
+
+✅ Structured run recording
+
+✅ Event logging and telemetry playback
+
+✅ Designed for future ROS 2 and AI integration
+
+---
+
+# Current Capabilities
+
+### Autonomous Navigation
+
+- Multi-sensor obstacle avoidance
+- Ultrasonic distance sensing
 - Five infrared obstacle sensors
-- LiPo motor power
-- USB or power-bank controller power
-- Shared ground between control and motor systems
-
-### Atlas Obstacle-Avoidance Firmware
-
-Arduino firmware responsible for:
-
-- Forward movement
-- Emergency stopping
-- Rear-protected reversing
-- Multi-angle ultrasonic scanning
-- Left/right path comparison
+- Dynamic path selection
 - Direction commitment
-- Heading verification
-- Turn extension
-- IR-based close-range reactions
-- Recovery locking and retry behavior
-- Human-readable serial telemetry
+- Recovery behaviours
+- Emergency stop handling
+- Automatic obstacle recovery
 
-The current firmware is stored as:
+### Remote Operation
 
-```text
-4wd-obstacle-mode.ino
-```
-
-### Atlas Serial Dashboard
-
-Local telemetry dashboard built to inspect and record Atlas runs.
-
-Current capabilities include:
-
-- USB serial connection
-- Port and baud-rate selection
-- Live robot state
-- Latest navigation decision
-- Obstacle and recovery reasons
-- Ultrasonic distance visualization
-- Five IR sensor states
-- Motion and recovery counters
-- Live event timeline
-- Run start and stop controls
-- Raw serial recording
-- Structured event and telemetry logs
-- Per-run metadata and summaries
-
----
-
-## Current Architecture
-
-```text
-                    Windows Computer
-                          │
-                          │ USB Serial @ 115200
-                          ▼
-                 Atlas Serial Dashboard
-                 FastAPI + WebSocket UI
-                          │
-                          │ telemetry / run logs
-                          ▼
-                JSONL + JSON + raw serial
-                          ▲
-                          │
-                    Arduino Uno R4
-                          │
-          ┌───────────────┼────────────────┐
-          ▼               ▼                ▼
-      Sensor Shield     L298N          SG90 Mount
-          │               │                │
-     Five IR sensors   Four motors       HC-SR04
-          │               │                │
-          └───────────────┴────────────────┘
-                    Atlas control loop
-```
-
----
-
-## Current Hardware
-
-### Controller
-
-- Arduino Uno R4 WiFi-compatible board
-- Sensor Shield V5
-- USB-C data and controller power connection
-
-### Drive System
-
-- L298N dual H-bridge motor driver
-- Four TT geared motors
-- Four wheels
-- Skid-steer turning
-- Separate LiPo motor supply
-
-### Sensors
-
-- One HC-SR04 ultrasonic sensor
-- One pan-and-tilt SG90 assembly
-- Front-left IR sensor
-- Front-right IR sensor
-- Left-wing IR sensor
-- Right-wing IR sensor
-- Rear IR sensor
-
-### Mechanical Platform
-
-- Multi-level acrylic four-wheel chassis
-- Brass standoffs
-- Front-mounted scanning sensor assembly
-- Exposed modular wiring for rapid experimentation
-- Accessible controller and motor-driver mounting
-
----
-
-## Current Wiring
-
-### HC-SR04
-
-| Signal | Arduino Pin |
-|---|---:|
-| TRIG | D7 |
-| ECHO | D8 |
-| VCC | 5V |
-| GND | GND |
-
-### SG90 Servo
-
-| Signal | Arduino Pin |
-|---|---:|
-| Signal | D9 |
-| Power | Sensor Shield 5V rail |
-| Ground | Sensor Shield GND |
-
-### Infrared Sensors
-
-| Sensor | Arduino Pin |
-|---|---:|
-| Front left | A0 |
-| Front right | A1 |
-| Left wing | A2 |
-| Right wing | A3 |
-| Rear | A4 |
-
-### L298N Motor Driver
-
-| Signal | Arduino Pin |
-|---|---:|
-| ENA | D5 |
-| ENB | D6 |
-| IN1 | D2 |
-| IN2 | D3 |
-| IN3 | D4 |
-| IN4 | D12 |
-
-### Power Architecture
-
-```text
-USB-C / power bank
-        │
-        ▼
-Arduino Uno R4 + Sensor Shield
-        │
-        ├── HC-SR04
-        ├── SG90 servo
-        └── IR sensors
-
-LiPo battery
-        │
-        ▼
-L298N motor supply
-        │
-        ▼
-Four TT motors
-
-Arduino GND ───────── L298N GND
-```
-
-The control and motor power systems use separate supplies but share a common ground.
-
----
-
-## Current Navigation Behavior
-
-Atlas currently follows this control loop:
-
-```text
-Read IR sensors
-      │
-      ▼
-Read forward ultrasonic distance
-      │
-      ├── clear ───────────────► drive forward
-      │
-      ├── emergency ───────────► stop and reverse
-      │
-      └── obstacle
-             │
-             ▼
-      reverse with rear protection
-             │
-             ▼
-      scan multiple left angles
-             │
-             ▼
-      scan multiple right angles
-             │
-             ▼
-      compare side clearance
-             │
-             ▼
-      choose and commit to direction
-             │
-             ▼
-      turn and verify heading
-             │
-             ├── verified ─────► continue forward
-             │
-             └── failed ───────► recovery mode
-```
-
----
-
-## Current Features
-
-### Sensing
-
-- Forward ultrasonic ranging
-- Multiple scan angles on each side
-- IR sensor debouncing
-- Front-corner obstacle detection
-- Side-wall detection
-- Rear obstacle protection
-- Invalid and no-echo handling
-
-### Motion
-
-- Forward driving
-- Reverse movement
-- Left and right pivot turns
-- Gentle side correction
-- Adjustable PWM motor speeds
-- Emergency escape timing
-
-### Decision Logic
-
-- Left/right clearance comparison
-- Conservative multi-angle side scoring
-- Direction commitment
-- Strong-advantage switching
-- Heading target calculation
-- Heading acceptance checks
-- Limited turn extensions
-- Recovery locking
+- Cloud dashboard
+- Desktop browser support
+- Mobile browser support
+- Manual driving controls
+- Autonomous mode switching
+- Remote emergency stop
+- Clear E-Stop
+- Live connection monitoring
 
 ### Telemetry
 
-- Sensor measurements
-- Current motion state
-- Scan results
-- Selected direction
-- Chosen clearance
-- Heading target
-- Heading checks
-- Turn extensions
+- Live robot state
+- Navigation decisions
 - Recovery state
-- IR activations
-- Run counters
+- Sensor values
+- Event timeline
+- Motion counters
+- Run summaries
+- JSON logging
 
 ---
 
-# Atlas Hardware Preview
-
-## Front View
-
-![Atlas Front](docs/atlas_front.jfif)
-
-The front view shows the pan-and-tilt HC-SR04 assembly and the two front infrared sensors.
-
-## Left View
-
-![Atlas Left](docs/atlas_left.jfif)
-
-The left side exposes the modular chassis, controller stack, wiring, wheel drive, and sensor mounting.
-
-## Right View
-
-![Atlas Right](docs/atlas_right.jfif)
-
-The right side shows the Uno R4 and Sensor Shield stack, motor-driver placement, and side sensor coverage.
-
-## Rear View
-
-![Atlas Rear](docs/atlas_back.jfif)
-
-The rear view shows the L298N motor driver and rear infrared sensor used to protect reverse movement.
-
-## Top View
-
-![Atlas Top](docs/atlas_top.jfif)
-
-The top view shows the complete physical layout, power placement, sensor distribution, and wiring routes.
-
----
-
-# Dashboard Preview
-
-## Live Distance and Event Timeline
-
-![Atlas Dashboard Timeline](docs/atlas_dashboard2.png)
-
-The dashboard graph displays valid ultrasonic samples while the event timeline records sensor, motion, obstacle, scan, decision, heading, and recovery events.
-
-## Robot State and Run Counters
-
-![Atlas Dashboard Overview](docs/atlas-dashboard1.png)
-
-The main dashboard provides a live view of Atlas state, sensor status, decisions, recovery state, and cumulative run counters.
-
----
-
-## Run Data
-
-Each dashboard run can produce files such as:
+# System Architecture
 
 ```text
-runs/
-└── atlas_<timestamp>/
-    ├── metadata.json
-    ├── raw_serial.log
-    ├── events.jsonl
-    ├── telemetry.jsonl
-    └── summary.json
+                    Desktop Dashboard
+                          │
+                          │
+                    Mobile Dashboard
+                          │
+                          │
+                  Secure WebSocket (WSS)
+                          │
+                          ▼
+                 Atlas Cloud (Render)
+                          │
+                          │
+                  Secure WebSocket (WSS)
+                          │
+                          ▼
+                Arduino Uno R4 WiFi
+                          │
+        ┌─────────────────┼─────────────────┐
+        │                 │                 │
+        ▼                 ▼                 ▼
+   IR Sensors         HC-SR04         Motor Driver
+        │                 │                 │
+        └─────────────────┴─────────────────┘
+                    Autonomous Controller
 ```
 
-These files make it possible to compare repeated tests from the same starting position and identify:
+---
 
-- repeated obstacle loops
-- incorrect direction choices
-- excessive reversing
-- failed heading verification
-- unnecessary turn extensions
-- IR sensor activations
-- recovery success or failure
-- changes between firmware versions
+# Hardware
+
+Atlas is built around an Arduino Uno R4 WiFi using a modular four-wheel robot chassis designed for rapid experimentation and incremental upgrades.
+
+### Controller
+
+- Arduino Uno R4 WiFi
+- Sensor Shield V5
+
+### Sensors
+
+- HC-SR04 Ultrasonic Sensor
+- SG90 Servo Scanner
+- Five Infrared Obstacle Sensors
+
+### Drive System
+
+- L298N Dual H-Bridge
+- Four TT Geared Motors
+- Four-Wheel Skid Steering
+
+### Power
+
+- USB-C for controller power
+- Dedicated LiPo battery for motors
+- Shared common ground
 
 ---
 
-## Engineering Concepts Explored
+# Software Architecture
 
-- Embedded C++ control loops
-- Real-time sensor polling
-- Ultrasonic ranging
-- Infrared obstacle detection
-- Sensor debouncing
-- Multi-angle environment scanning
-- Reactive navigation
-- Direction hysteresis and commitment
-- Heading verification
-- Recovery state machines
-- Motor PWM control
-- Separate logic and motor power
-- Serial communication
-- WebSocket telemetry
-- Structured event logging
-- Reproducible physical testing
-- Hardware/software co-debugging
+Atlas is divided into two major components.
+
+## Embedded Firmware
+
+Running on the Arduino Uno R4 WiFi.
+
+Responsible for:
+
+- Sensor acquisition
+- Obstacle avoidance
+- Motion control
+- Safety systems
+- Cloud communication
+- Telemetry generation
 
 ---
 
-## Tech Stack
+## Atlas Dashboard
 
-### Embedded
+Built with:
+
+- FastAPI
+- Python
+- HTML
+- CSS
+- JavaScript
+- WebSockets
+
+Responsible for:
+
+- Remote control
+- Live telemetry
+- Robot monitoring
+- Run recording
+- Event visualization
+- Cloud connectivity
+- Mobile support
+
+---
+
+# Dashboard
+
+<p align="center">
+
+![Atlas Dashboard](docs/atlas-dashboard1.png)
+
+</p>
+
+Atlas Dashboard provides a live view of the robot while it is operating. Rather than acting as a simple serial monitor, it functions as a real-time robotics control station capable of monitoring, recording, and remotely controlling Atlas from any modern web browser.
+
+The dashboard was designed to make every robot decision observable, allowing embedded software behavior to be analyzed after each run.
+
+---
+
+## Dashboard Features
+
+### Live Robot Status
+
+- Current robot state
+- Latest navigation decision
+- Recovery state
+- Obstacle reasoning
+- Connection status
+- Control mode
+- Run timer
+
+---
+
+### Sensor Monitoring
+
+- Ultrasonic distance
+- Five infrared sensor states
+- Live sensor updates
+- Event timeline
+- Telemetry parsing
+
+---
+
+### Remote Driving
+
+Atlas supports both autonomous and manual operation through the same dashboard.
+
+#### Autonomous Mode
+
+The onboard controller performs all navigation decisions independently while the dashboard monitors its behavior in real time.
+
+#### Manual Mode
+
+Operators can remotely drive Atlas using:
+
+- Forward
+- Reverse
+- Pivot left
+- Pivot right
+- Forward-left
+- Forward-right
+- Reverse-left
+- Reverse-right
+
+Movement commands are streamed over the cloud while the robot continues reporting live telemetry.
+
+---
+
+### Safety Features
+
+Atlas includes multiple layers of safety.
+
+- Emergency Stop
+- Clear E-Stop
+- Manual timeout protection
+- Automatic obstacle avoidance
+- Cloud connection monitoring
+
+If communication stops while driving manually, Atlas automatically halts to prevent uncontrolled movement.
+
+---
+
+# Cloud Robotics
+
+One of the biggest improvements introduced in Version 3 is cloud connectivity.
+
+Instead of requiring a direct USB connection, Atlas can now communicate securely with a cloud-hosted dashboard over the public Internet.
+
+```text
+Robot
+   │
+Secure WebSocket (WSS)
+   │
+Render Cloud Server
+   │
+Desktop Browser
+   │
+Mobile Browser
+```
+
+This architecture allows Atlas to be monitored and controlled from virtually anywhere while maintaining a single shared source of telemetry.
+
+---
+
+## Communication
+
+Atlas currently uses secure WebSockets (WSS) for bidirectional communication between the robot and the dashboard.
+
+Current communication includes:
+
+- Robot telemetry
+- Live status updates
+- Manual driving commands
+- Control mode switching
+- Emergency stop commands
+- Heartbeats
+- Connection monitoring
+
+This provides a reliable cloud-based communication layer while remaining simple to deploy and maintain.
+
+---
+
+## Networking Roadmap
+
+Current cloud communication prioritizes reliability and simplicity.
+
+Future versions will migrate toward a hybrid networking architecture:
+
+- UDP for low-latency motion commands
+- Secure WebSockets for telemetry
+- Dashboard synchronization
+- Run recording
+- Robot state updates
+
+This combines the responsiveness of UDP with the reliability and flexibility of persistent WebSocket connections.
+
+---
+
+# Run Recording
+
+Every Atlas session can be recorded for later analysis.
+
+Each run stores structured information such as:
+
+- Telemetry
+- Robot events
+- Motion history
+- Sensor values
+- Run metadata
+- Summary statistics
+
+This allows navigation algorithms to be compared between firmware versions while keeping physical testing repeatable.
+
+---
+
+# Tech Stack
+
+## Embedded
 
 - Arduino C++
-- Arduino Servo library
-- Arduino Uno R4
-- Sensor Shield V5
-- HC-SR04
-- SG90
-- IR obstacle sensors
-- L298N
+- Arduino Uno R4 WiFi
+- WiFiS3
+- NuSock WebSocket Client
+- Servo Library
 
-### Dashboard
+---
+
+## Backend
 
 - Python
 - FastAPI
+- Uvicorn
+- WebSockets
 - PySerial
-- WebSocket
+
+---
+
+## Frontend
+
 - HTML
 - CSS
 - JavaScript
 - Chart.js
 
-### Development
+---
 
-- Visual Studio Code
-- Arduino IDE or Arduino CLI
-- Git
-- GitHub
-- Windows 11
+## Cloud
+
+- Render
+- Secure WebSockets (WSS)
+- GitHub Deployment
 
 ---
 
-## Requirements
+# Getting Started
 
-### Hardware
+## Clone the Repository
 
-- Arduino Uno R4-compatible controller
-- Sensor Shield V5
-- L298N motor driver
-- Four TT motors
-- HC-SR04 ultrasonic sensor
-- SG90 servo
-- Five IR sensors
-- Suitable motor battery
-- USB data cable
+```bash
+git clone https://github.com/blacAxe/atlas-robot-v3.git
 
-### Software
-
-- Visual Studio Code
-- Git
-- Python 3
-- Arduino IDE or Arduino CLI
-- Required Python dashboard packages
-
----
-
-## Running the Firmware
-
-### 1. Open the firmware
-
-Open:
-
-```text
-4wd-obstacle-mode.ino
-```
-
-using Arduino IDE or the Arduino extension/tooling in Visual Studio Code.
-
-### 2. Select the board and serial port
-
-Select the connected Uno R4-compatible board and its COM port.
-
-### 3. Upload
-
-Compile and upload the sketch.
-
-### 4. Confirm telemetry
-
-Open the serial monitor at:
-
-```text
-115200 baud
-```
-
-Expected startup output includes sensor stabilization followed by Atlas state and telemetry messages.
-
----
-
-## Running the Dashboard
-
-Use the existing dashboard startup command for this workspace.
-
-After startup:
-
-1. Open the local dashboard URL.
-2. Refresh serial ports.
-3. Select the Arduino COM port.
-4. Confirm `115200` baud.
-5. Connect.
-6. Start a run.
-7. Place Atlas at the repeatable test position.
-8. Power the motors.
-9. Stop and save the run after the test.
-
----
-
-## Testing Workflow
-
-A controlled test should preserve:
-
-- the same starting position
-- the same starting orientation
-- the same obstacle layout
-- the same battery state when possible
-- the same firmware version
-- approximately equal run duration
-
-Recommended comparison process:
-
-```text
-Run 1
-  │
-  ├── observe physical behavior
-  ├── save dashboard logs
-  └── note escape or loop outcome
-
-Run 2 from identical position
-  │
-  ├── observe repeatability
-  ├── save dashboard logs
-  └── compare counters and event sequence
+cd atlas-robot-v3
 ```
 
 ---
 
-## Current Firmware Status
+## Install Python Dependencies
 
-The current Mode 3 firmware is an improvement over the earlier single-angle selection behavior.
-
-Recent improvements include:
-
-- multiple scan angles per side
-- fewer misleading long-range direction choices
-- direction commitment
-- stronger heading requirements
-- richer telemetry
-- recovery retries
-- better dashboard visibility
-
-The current revision is still under active tuning.
+```bash
+pip install -r requirements.txt
+```
 
 ---
 
-## Current Limitations
+## Start the Dashboard
 
-- Direction commitment can occasionally favor a worse side.
-- Heading verification can still be too strict.
-- Turn extensions may be excessive in confined areas.
-- HC-SR04 readings represent narrow acoustic rays rather than full robot-body clearance.
-- The robot currently has no wheel encoders or odometry.
-- The robot cannot yet determine whether it has returned to the same physical location.
-- IR sensors depend heavily on mounting angle and potentiometer calibration.
-- L298N motor control is open-loop.
-- No WiFi transport is enabled yet.
-- No micro-ROS integration is enabled yet.
-- The current robot uses reactive navigation rather than map-based planning.
-- Wiring remains intentionally exposed for development and debugging.
+```powershell
+.\start-dashboard.ps1
+```
 
----
+The dashboard automatically displays:
 
-## Planned Improvements
+- Local dashboard URL
+- Mobile dashboard URL
+- Cloud connection support
 
-- Reject commitment when the committed side is too close.
-- Switch direction when the opposite side has a clear measurable advantage.
-- Reduce unnecessary turn extensions.
-- Reset commitment after failed heading verification.
-- Improve progress detection.
-- Add wheel encoders.
-- Add IMU support.
-- Add WiFi telemetry after physical behavior is stable.
-- Introduce UDP or WebSocket transport.
-- Add micro-ROS integration.
-- Connect the physical robot to the broader Atlas ROS 2 architecture.
-- Add diagnostics, battery telemetry, and run-quality scoring.
-- Develop higher-level MCCA-based decision support.
+Open the displayed address in any modern browser to begin controlling or monitoring Atlas.
 
 ---
 
-## Repository Structure
+# Repository Structure
 
 ```text
-atlas-robot-v1/
+atlas-robot-v3/
 │
-├── 4wd-obstacle-mode.ino
-├── README.md
+├── app.py                  # FastAPI backend
+├── start-dashboard.ps1     # Dashboard launcher
+├── requirements.txt
+│
+├── static/                 # Dashboard frontend
+│   ├── dashboard.js
+│   ├── dashboard.css
+│   └── ...
+│
+├── templates/
+│   └── index.html
+│
+├── transport/
+│   ├── serial
+│   ├── udp
+│   └── cloud
 │
 ├── docs/
-│   ├── atlas_front.jfif
-│   ├── atlas_back.jfif
-│   ├── atlas_left.jfif
-│   ├── atlas_right.jfif
-│   ├── atlas_top.jfif
-│   ├── atlas_dashboard2.png
-│   └── atlas-dashboard1.png
+│   ├── images
+│   ├── gifs
+│   └── videos
 │
-├── runs/
-│   └── generated dashboard run folders
-│
-└── dashboard source files
-```
-
-The exact dashboard source layout may continue evolving while the firmware and telemetry protocol are stabilized.
-
----
-
-## Git Workflow
-
-### Initialize the repository
-
-```bash
-git init
-```
-
-### Add files
-
-```bash
-git add .
-```
-
-### Create the first commit
-
-```bash
-git commit -m "Initial Atlas Robot v1 hardware, firmware, and dashboard"
-```
-
-### Rename the default branch
-
-```bash
-git branch -M main
-```
-
-### Connect GitHub
-
-```bash
-git remote add origin https://github.com/<your-username>/atlas-robot-v1.git
-```
-
-### Push
-
-```bash
-git push -u origin main
+└── arduino/
+    └── atlas_robot_v3.ino
 ```
 
 ---
 
-## Notes
+# Gallery
 
-Atlas Robot v1 is intentionally built as an evolving engineering platform.
+<p align="center">
 
-The architecture prioritizes:
+![Robot](docs/robot1.jpg)
 
-- observable behavior
-- reproducible testing
-- hardware accessibility
-- understandable control logic
-- detailed telemetry
-- incremental complexity
-- safe power separation
-- learning through physical experimentation
+![Dashboard](docs/dashboard1.png)
 
-The goal is not only to make the robot move around obstacles. The larger objective is to understand why each decision was made, measure whether it worked, and gradually build a robot whose hardware, embedded software, telemetry, ROS 2 services, memory, and higher-level cognition can operate as one system.
+![Hardware](docs/hardware1.jpg)
 
+</p>
 
-## Mobile dashboard
+More photos, videos, and demonstrations can be found inside the **docs/** directory.
 
-No Arduino firmware change is required.
+---
 
-1. Start the dashboard with `.\start-dashboard.ps1`.
-2. The terminal prints both the laptop URL and a phone URL.
-3. Connect the phone to the same Wi-Fi network as the laptop and Atlas.
-4. Open the printed phone URL, for example `http://192.168.0.96:8000`.
-5. In the dashboard select **Wi-Fi UDP**, port **4210**, then connect.
+# Project Roadmap
 
-The server now listens on `0.0.0.0`, which allows devices on the local network to
-open the dashboard. Do not expose port 8000 directly to the public internet.
+Atlas is intentionally built in small engineering milestones. Each version expands the same physical robot while improving the underlying software architecture.
+
+## ✅ Version 1
+
+- Four-wheel robot platform
+- Autonomous obstacle avoidance
+- Ultrasonic sensing
+- Infrared obstacle detection
+- Embedded recovery behaviours
+- USB Serial telemetry
+
+---
+
+## ✅ Version 2
+
+- Interactive dashboard
+- Live telemetry visualization
+- Structured run recording
+- Event logging
+- Manual driving
+- Autonomous mode switching
+- Emergency stop system
+
+---
+
+## ✅ Version 3 (Current)
+
+- Arduino Uno R4 WiFi
+- Cloud-hosted dashboard
+- Secure WebSocket communication
+- Remote Internet control
+- Mobile browser support
+- Live cloud telemetry
+- Render deployment
+- Real-time robot monitoring
+
+---
+
+# Future Roadmap
+
+Atlas is designed as a long-term robotics platform rather than a single demonstration project.
+
+The next milestones focus on improving real-time control, autonomy, and intelligent decision making.
+
+---
+
+## Networking
+
+- Hybrid UDP + WebSocket communication
+- Low-latency motion commands
+- Automatic transport failover
+- Connection quality monitoring
+- Multi-robot support
+- Robot authentication
+
+---
+
+## Embedded Robotics
+
+- Wheel encoder integration
+- Closed-loop motor control
+- IMU integration
+- Battery monitoring
+- OTA firmware updates
+- Watchdog recovery
+
+---
+
+## Navigation
+
+- Mapping
+- Waypoint navigation
+- Autonomous mission execution
+- Route planning
+- Dynamic obstacle avoidance
+- Indoor localization
+
+---
+
+## Dashboard
+
+- Live camera streaming
+- Telemetry playback
+- Sensor history graphs
+- Battery visualization
+- Performance analytics
+- Multiple robot support
+
+---
+
+## Intelligence
+
+Atlas is ultimately intended to become the embedded robotics platform for larger AI systems.
+
+Planned integrations include:
+
+- ROS 2
+- micro-ROS
+- MCCA (Memory-Conditioned Cognitive Architecture)
+- Atlas memory system
+- LLM-assisted navigation
+- Natural language robot interaction
+- Autonomous task planning
+
+---
+
+# Engineering Goals
+
+Rather than optimizing for the fastest possible robot, Atlas is built to understand how complete robotics systems are engineered.
+
+The project emphasizes:
+
+- Embedded software
+- Robotics algorithms
+- Networking
+- Cloud infrastructure
+- Real-time telemetry
+- Distributed systems
+- Software architecture
+- AI integration
+
+Each milestone is designed to improve both the robot and the engineering practices used to build it.
+
+---
+
+# Acknowledgements
+
+This project builds upon the Arduino ecosystem together with many excellent open-source tools and libraries.
+
+Special thanks to the maintainers of:
+
+- Arduino
+- FastAPI
+- Uvicorn
+- Render
+- NuSock
+- WiFiS3
+- GitHub
+
+and the broader open-source robotics community.
+
+---
+
+# License
+
+This project is released under the MIT License.
+
+---
+
+# Connect
+
+If you enjoyed this project or found it useful, feel free to:
+
+⭐ Star the repository
+
+🍴 Fork the project
+
+💡 Open an issue
+
+🚀 Suggest improvements
+
+---
+
+<p align="center">
+
+<b>Atlas Robot v3</b>
+
+Cloud Robotics • Embedded Systems • Real-Time Control • Autonomous Navigation
+
+Building toward the next generation of intelligent robotics.
+
+</p>
