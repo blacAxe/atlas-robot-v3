@@ -443,7 +443,6 @@ async def robot_websocket(websocket: WebSocket):
 
     latest_cloud_status["connected"] = True
     latest_cloud_status["server"] = "Render"
-    latest_cloud_status["robot"] = robot_info.get("robot")
 
     schedule_broadcast(
         {
