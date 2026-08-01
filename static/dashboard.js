@@ -216,41 +216,114 @@ function selectedTransport() {
 }
 
 function updateTransportFields() {
-  const isUdp = selectedTransport() === "udp";
-  $("serialPortField").classList.toggle("hidden", isUdp);
-  $("baudField").classList.toggle("hidden", isUdp);
-  $("refreshPortsButton").classList.toggle("hidden", isUdp);
-  $("udpPortField").classList.toggle("hidden", !isUdp);
+
+    const transport = selectedTransport();
+
+    const isUdp = transport === "udp";
+
+    const isCloud = transport === "cloud";
+
+    $("serialPortField").classList.toggle(
+        "hidden",
+        isUdp || isCloud
+    );
+
+    $("baudField").classList.toggle(
+        "hidden",
+        isUdp || isCloud
+    );
+
+    $("refreshPortsButton").classList.toggle(
+        "hidden",
+        isUdp || isCloud
+    );
+
+    $("udpPortField").classList.toggle(
+        "hidden",
+        !isUdp
+    );
+
+    $("cloudUrlField").classList.toggle(
+        "hidden",
+        !isCloud
+    );
+
 }
 
 async function connectTransport() {
-  const transport = selectedTransport();
-  const payload = { transport };
 
-  if (transport === "serial") {
-    const port = $("portSelect").value;
-    const baud = Number($("baudInput").value || 115200);
-    if (!port) {
-      setStatus("Select a COM port first.", true);
-      return;
+    const transport = selectedTransport();
+
+    const payload = {
+        transport: transport
+    };
+
+    if (transport === "serial") {
+
+        const port = $("portSelect").value;
+        const baud = Number($("baudInput").value || 115200);
+
+        if (!port) {
+            setStatus("Select a COM port first.", true);
+            return;
+        }
+
+        payload.port = port;
+        payload.baud = baud;
+
     }
-    payload.port = port;
-    payload.baud = baud;
-  } else {
-    payload.udp_port = Number($("udpPortInput").value || 4210);
-  }
+    else if (transport === "udp") {
 
-  try {
-    await api("/api/connect", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-    setStatus(transport === "udp"
-      ? `Listening for Atlas Wi-Fi telemetry on UDP port ${payload.udp_port}.`
-      : `Connected to ${payload.port} at ${payload.baud}.`);
-  } catch (error) {
-    setStatus(`Connection failed: ${error.message}`, true);
-  }
+        payload.udp_port =
+            Number($("udpPortInput").value || 4210);
+
+    }
+    else if (transport === "cloud") {
+
+        payload.cloud_url =
+            $("cloudUrlInput").value.trim();
+
+    }
+
+    try {
+
+        await api("/api/connect", {
+            method: "POST",
+            body: JSON.stringify(payload)
+        });
+
+        if (transport === "serial") {
+
+            setStatus(
+                `Connected to ${payload.port}.`
+            );
+
+        }
+        else if (transport === "udp") {
+
+            setStatus(
+                `Listening on UDP ${payload.udp_port}.`
+            );
+
+        }
+        else {
+
+            setStatus(
+                `Connecting to Atlas Cloud...`
+            );
+
+        }
+
+    }
+    catch (err) {
+
+        setStatus(
+            `Connection failed: ${err.message}`,
+            true
+        );
+
+    }
+
 }
 
 async function disconnectTransport() {
@@ -289,25 +362,70 @@ async function stopRun() {
 }
 
 function updateConnection(connection) {
-  const transport = connection?.active_transport || "serial";
-  const details = transport === "udp" ? connection?.udp : connection?.serial;
-  const connected = Boolean(details?.connected);
-  const badge = $("connectionBadge");
 
-  if (connected && transport === "udp") {
-    badge.textContent = details.last_sender
-      ? `Wi-Fi UDP · ${details.last_sender}`
-      : `Wi-Fi UDP · port ${details.port}`;
-  } else if (connected) {
-    badge.textContent = `USB Serial · ${details.port}`;
-  } else {
-    badge.textContent = "Disconnected";
-  }
+    const transport =
+        connection?.active_transport || "serial";
 
-  badge.classList.toggle("connected", connected);
-  $("connectButton").disabled = connected;
-  $("disconnectButton").disabled = !connected;
-  $("transportSelect").disabled = connected;
+    let details = null;
+
+    if (transport === "serial") {
+
+        details = connection?.serial;
+
+    }
+    else if (transport === "udp") {
+
+        details = connection?.udp;
+
+    }
+    else if (transport === "cloud") {
+
+        details = connection?.cloud;
+
+    }
+
+    const connected = Boolean(details?.connected);
+
+    const badge = $("connectionBadge");
+
+    if (connected && transport === "serial") {
+
+        badge.textContent =
+            `USB Serial · ${details.port}`;
+
+    }
+    else if (connected && transport === "udp") {
+
+        badge.textContent =
+            details.last_sender
+            ? `Wi-Fi UDP · ${details.last_sender}`
+            : `Wi-Fi UDP · port ${details.port}`;
+
+    }
+    else if (connected && transport === "cloud") {
+
+        badge.textContent =
+            `Atlas Cloud`;
+
+    }
+    else {
+
+        badge.textContent =
+            "Disconnected";
+
+    }
+
+    badge.classList.toggle(
+        "connected",
+        connected
+    );
+
+    $("connectButton").disabled = connected;
+
+    $("disconnectButton").disabled = !connected;
+
+    $("transportSelect").disabled = connected;
+
 }
 
 function updateRun(run) {
@@ -504,7 +622,9 @@ function connectWebSocket() {
   state.ws = new WebSocket(`${protocol}//${location.host}/ws/dashboard`);
 
   state.ws.onopen = () => {
-    setStatus("Dashboard connected. Choose USB Serial or Wi-Fi UDP.");
+    setStatus(
+        "Dashboard connected. Choose USB Serial, Wi-Fi UDP, or Atlas Cloud."
+    );
     state.ws.send("ready");
   };
 

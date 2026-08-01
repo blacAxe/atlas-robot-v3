@@ -26,6 +26,7 @@ from run_manager import RunManager
 from serial_reader import SerialReader, available_ports
 from telemetry_parser import TelemetryParser
 from udp_reader import UdpReader
+from transport_cloud import CloudTransport
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
@@ -71,7 +72,7 @@ class ConnectRequest(BaseModel):
     port: str | None = None
     baud: int = BAUD_RATE
     udp_port: int = UDP_PORT
-    cloud_url: str = "ws://localhost:8000/ws/robot"
+    cloud_url: str = "wss://atlas-robot.onrender.com/ws/robot"
 
 
 class StartRunRequest(BaseModel):
@@ -172,8 +173,20 @@ def on_transport_line(line: str) -> None:
     })
 
 
-serial_reader = SerialReader(on_line=on_transport_line, on_status=on_serial_status)
-udp_reader = UdpReader(on_line=on_transport_line, on_status=on_udp_status)
+serial_reader = SerialReader(
+    on_line=on_transport_line,
+    on_status=on_serial_status,
+)
+
+udp_reader = UdpReader(
+    on_line=on_transport_line,
+    on_status=on_udp_status,
+)
+
+cloud_transport = CloudTransport(
+    on_line=on_transport_line,
+    on_status=on_cloud_status,
+)
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     global main_loop
@@ -202,6 +215,14 @@ async def api_status():
 @app.get("/api/ports")
 async def api_ports():
     return {"ports": available_ports()}
+
+@app.get("/health")
+async def health():
+    return {
+        "status": "ok",
+        "robot_connected": robot_info["connected"],
+        "transport": active_transport,
+    }
 
 
 @app.post("/api/connect")
@@ -239,7 +260,11 @@ async def api_connect(request: ConnectRequest):
 
             serial_reader.disconnect()
             udp_reader.disconnect()
+            cloud_transport.disconnect()      # optional cleanup
 
+            # cloud_transport.connect(request.cloud_url)
+
+            latest_cloud_status["server"] = request.cloud_url
 
             active_transport = "cloud"
 
@@ -264,9 +289,15 @@ async def api_connect(request: ConnectRequest):
 
 @app.post("/api/disconnect")
 async def api_disconnect():
+
     serial_reader.disconnect()
     udp_reader.disconnect()
-    return {"ok": True, "connection": connection_status()}
+    cloud_transport.disconnect()
+
+    return {
+        "ok": True,
+        "connection": connection_status(),
+    }
 
 
 @app.post("/api/command")

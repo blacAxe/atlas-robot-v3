@@ -33,6 +33,7 @@
         <select id="transportSelect">
           <option value="serial">USB Serial</option>
           <option value="udp">Wi-Fi UDP</option>
+          <option value="cloud">Atlas Cloud</option>
         </select>
       </div>
       <div class="field" id="serialPortField">
@@ -46,6 +47,14 @@
       <div class="field small hidden" id="udpPortField">
         <label for="udpPortInput">UDP port</label>
         <input id="udpPortInput" type="number" value="4210">
+      </div>
+      <div class="field hidden" id="cloudUrlField">
+          <label for="cloudUrlInput">Cloud URL</label>
+
+          <input
+              id="cloudUrlInput"
+              type="text"
+              value="ws://localhost:8000/ws/robot">
       </div>
       <button id="refreshPortsButton">Refresh ports</button>
       <button id="connectButton" class="primary">Connect</button>

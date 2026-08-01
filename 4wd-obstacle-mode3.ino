@@ -1,18 +1,27 @@
 #include <Servo.h>
 #include <WiFiS3.h>
+#include <WebSocketsClient.h>
 #include "arduino_secrets.h"
 
-IPAddress laptopIP(192, 168, 0, 147);
+IPAddress laptopIP(192, 168, 0, 180);
+
+const char* CLOUD_HOST = "atlas-robot.onrender.com";
+const uint16_t CLOUD_PORT = 443;
+const char* CLOUD_PATH = "/ws/robot";
+bool websocketConnected = false;
 
 const unsigned int ATLAS_UDP_DESTINATION_PORT = 4210;
 const unsigned int ATLAS_UDP_LOCAL_PORT = 4211;
 const unsigned long WIFI_RETRY_INTERVAL_MS = 5000;
 
 WiFiUDP atlasUdp;
+WebSocketsClient atlasSocket;
 
 bool wifiTelemetryReady = false;
 unsigned long lastWiFiRetryMs = 0;
 bool remoteStopLatched = false;
+bool websocketReady = false;
+unsigned long lastHeartbeatMs = 0;
 
 enum AtlasControlMode {
   CONTROL_AUTO,
@@ -20,6 +29,14 @@ enum AtlasControlMode {
 };
 
 AtlasControlMode controlMode = CONTROL_AUTO;
+
+// ===== Forward declarations =====
+
+void setControlMode(AtlasControlMode newMode);
+
+void STOP();
+
+void executeManualCommand(const String &command);
 
 const unsigned long MANUAL_COMMAND_TIMEOUT_MS = 500;
 unsigned long lastManualCommandMs = 0;
@@ -58,15 +75,20 @@ private:
   void sendBufferedLine() {
     lineBuffer[lineLength] = '\0';
 
-    if (lineLength > 0 &&
-        wifiTelemetryReady &&
-        WiFi.status() == WL_CONNECTED) {
-      atlasUdp.beginPacket(laptopIP, ATLAS_UDP_DESTINATION_PORT);
-      atlasUdp.write(
-        reinterpret_cast<const uint8_t *>(lineBuffer),
-        lineLength
-      );
-      atlasUdp.endPacket();
+    if (lineLength > 0 && websocketConnected) {
+
+        String packet = "{\"type\":\"telemetry\",\"line\":\"";
+
+        String line = String(lineBuffer);
+
+        // Escape characters that would break JSON
+        line.replace("\\", "\\\\");
+        line.replace("\"", "\\\"");
+
+        packet += line;
+        packet += "\"}";
+
+        atlasSocket.sendTXT(packet);
     }
 
     lineLength = 0;
@@ -118,7 +140,14 @@ void startWiFiTelemetry() {
     return;
   }
 
-  atlasUdp.begin(ATLAS_UDP_LOCAL_PORT);
+  atlasSocket.beginSSL(CLOUD_HOST, CLOUD_PORT, CLOUD_PATH);
+
+  atlasSocket.onEvent(onWebSocketEvent);
+
+  atlasSocket.setReconnectInterval(5000);
+
+  AtlasOut.println(F("Connecting to Atlas Cloud..."));
+
   wifiTelemetryReady = true;
 
   AtlasOut.println(F("Wi-Fi telemetry connected"));
@@ -140,9 +169,16 @@ void maintainWiFiTelemetry() {
   if (WiFi.status() == WL_CONNECTED) {
     if (!wifiTelemetryReady &&
         WiFi.localIP().toString() != "0.0.0.0") {
-      atlasUdp.begin(ATLAS_UDP_LOCAL_PORT);
+
+      atlasSocket.beginSSL(CLOUD_HOST, CLOUD_PORT, CLOUD_PATH);
+
+      atlasSocket.onEvent(onWebSocketEvent);
+
+      atlasSocket.setReconnectInterval(5000);
+
       wifiTelemetryReady = true;
-      AtlasOut.println(F("Wi-Fi telemetry restored"));
+
+      AtlasOut.println(F("Atlas Cloud reconnecting"));
     }
 
     return;
@@ -160,7 +196,91 @@ void maintainWiFiTelemetry() {
   WiFi.begin(SECRET_SSID, SECRET_PASS);
 }
 
+void onWebSocketEvent(WStype_t type, uint8_t *payload, size_t length)
+{
+    switch (type)
+    {
+        case WStype_CONNECTED:
+        {
+            websocketConnected = true;
 
+            AtlasOut.println(F("Cloud connected"));
+
+           atlasSocket.sendTXT(
+                "{\"type\":\"hello\",\"robot\":\"atlas-v3\",\"firmware\":\"v3\",\"transport\":\"cloud\"}"
+           );
+
+            break;
+        }
+
+        case WStype_DISCONNECTED:
+        {
+            websocketConnected = false;
+            AtlasOut.println(F("Cloud disconnected"));
+            break;
+        }
+
+        case WStype_TEXT:
+        {
+            String message = String((char*)payload);
+
+            AtlasOut.println(F("WEBSOCKET MESSAGE RECEIVED"));
+
+            AtlasOut.print(F("RAW: "));
+            AtlasOut.println(message);
+
+            int pos = message.indexOf("\"command\":\"");
+
+            if (pos < 0)
+            {
+                AtlasOut.println(F("No command field"));
+                break;
+            }
+
+            pos += 11;
+
+            int end = message.indexOf("\"", pos);
+
+            if (end < 0)
+            {
+                AtlasOut.println(F("Invalid JSON"));
+                break;
+            }
+
+            String command = message.substring(pos, end);
+
+            AtlasOut.print(F("Parsed command: "));
+            AtlasOut.println(command);
+
+            if (command == "AUTO")
+            {
+                setControlMode(CONTROL_AUTO);
+            }
+            else if (command == "MANUAL")
+            {
+                setControlMode(CONTROL_MANUAL);
+            }
+            else if (command == "STOP")
+            {
+                remoteStopLatched = true;
+                STOP();
+            }
+            else if (command == "CLEAR_ESTOP")
+            {
+                remoteStopLatched = false;
+            }
+            else
+            {
+                executeManualCommand(command);
+            }
+
+            break;
+        }
+
+        default:
+            break;
+    }
+}
 
 // Atlas Uno R4 + Sensor Shield V5 wiring
 
@@ -251,8 +371,8 @@ const unsigned long BACK_CHECK_INTERVAL_MS = 35;
 
 // Turn settings
 
-const unsigned long BASE_TURN_TIME_MS = 410;
-const unsigned long EXTRA_TURN_TIME_MS = 220;
+const unsigned long BASE_TURN_TIME_MS = 425;
+const unsigned long EXTRA_TURN_TIME_MS = 235;
 const int MAX_TURN_EXTENSIONS = 5;
 
 // IR debounce settings
@@ -585,7 +705,8 @@ void setup() {
 
 void loop() {
   maintainWiFiTelemetry();
-  checkForWiFiCommand();
+  atlasSocket.loop();
+  // checkForWiFiCommand();
   maintainManualSafety();
 
   if (remoteStopLatched) {
