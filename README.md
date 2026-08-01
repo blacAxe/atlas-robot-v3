@@ -478,11 +478,11 @@ atlas-robot-v3/
 
 <p align="center">
 
-![Robot](docs/robot1.jpg)
+![Robot](docs/atlas_front.jfif)
 
-![Dashboard](docs/dashboard1.png)
+![Dashboard](docs/atlas_dashboard2.png)
 
-![Hardware](docs/hardware1.jpg)
+![Hardware](docs/atlas_top.jfif)
 
 </p>
 
