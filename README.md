@@ -10,20 +10,9 @@
 
 <p align="center">
 
-![License](https://img.shields.io/github/license/blacAxe/atlas-robot-v3)
-![Stars](https://img.shields.io/github/stars/blacAxe/atlas-robot-v3)
-![Forks](https://img.shields.io/github/forks/blacAxe/atlas-robot-v3)
-![Last Commit](https://img.shields.io/github/last-commit/blacAxe/atlas-robot-v3)
-
-</p>
-
-<p align="center">
-
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
 ![Arduino](https://img.shields.io/badge/Arduino-Uno_R4_WiFi-00979D)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688)
 ![Render](https://img.shields.io/badge/Cloud-Render-46E3B7)
-![WebSockets](https://img.shields.io/badge/WebSockets-WSS-blueviolet)
 ![Version](https://img.shields.io/badge/Version-v3-blue)
 ![Status](https://img.shields.io/badge/Status-Active-success)
 
