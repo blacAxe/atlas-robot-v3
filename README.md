@@ -174,6 +174,18 @@ Atlas is built around an Arduino Uno R4 WiFi using a modular four-wheel robot ch
 
 ---
 
+## Hardware Wiring Diagram
+
+The diagram below shows the complete hardware wiring for Atlas Robot v3, including the Arduino Uno R4 WiFi with Sensor Shield V5, L298N motor driver, four TT motors, five infrared obstacle sensors, HC-SR04 ultrasonic sensor mounted on an SG90 servo, and the LiPo-powered motor system with a shared ground.
+
+<p align="center">
+
+<img src="docs/atlas-wiring.png" width="900"/>
+
+</p>
+
+---
+
 # Software Architecture
 
 Atlas is divided into two major components.
@@ -479,6 +491,8 @@ atlas-robot-v3/
 <p align="center">
 
 ![Robot](docs/atlas_front.jfif)
+
+![Hardware Wiring](docs/atlas-wiring.png)
 
 ![Dashboard](docs/atlas_dashboard2.png)
 
